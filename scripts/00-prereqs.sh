@@ -6,7 +6,17 @@ source "$(dirname "$0")/lib.sh"
 [[ "$(uname -s)" == "Darwin" ]] || warn "written for macOS; continuing anyway"
 
 log "installing CLI tools via Homebrew (idempotent)"
-brew install --quiet podman kind kubectl helm jq yq skopeo git curl gettext
+brew install --quiet kind kubectl helm jq yq skopeo git curl gettext
+
+# Podman: only the CLI + a Podman machine are needed. Podman Desktop is optional (a GUI over the same
+# machine). If podman is already installed (Podman Desktop / the podman.io installer put it in
+# /opt/podman/bin), don't add a second, possibly different-version copy from Homebrew.
+if command -v podman >/dev/null 2>&1; then
+  log "podman: $(command -v podman) — $(podman --version) (existing install, not touched)"
+else
+  log "installing podman via Homebrew"
+  brew install --quiet podman
+fi
 
 # ---- crane -------------------------------------------------------------------
 case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; *) arch=amd64 ;; esac
@@ -25,7 +35,9 @@ grep -q '.local/bin' "${HOME}/.zshrc" 2>/dev/null || warn "add to ~/.zshrc: expo
 
 # ---- Podman machine ----------------------------------------------------------
 podman machine inspect "$PODMAN_MACHINE" >/dev/null 2>&1 \
-  || die "Podman machine '${PODMAN_MACHINE}' not found (set PODMAN_MACHINE)"
+  || die "Podman machine '${PODMAN_MACHINE}' not found. Create one (or use Podman Desktop → Settings → Resources):
+      podman machine init --cpus 6 --memory 12288 --disk-size 80 --rootful ${PODMAN_MACHINE}
+      podman machine start ${PODMAN_MACHINE}"
 info=$(podman machine inspect "$PODMAN_MACHINE")
 log "Podman machine: $(jq -r -f "${JQ_DIR}/machine-summary.jq" <<<"$info")"
 [[ "$(jq -r '.[0].State' <<<"$info")" == "running" ]] || die "start it: podman machine start ${PODMAN_MACHINE}"

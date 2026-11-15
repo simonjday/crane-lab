@@ -17,6 +17,13 @@ throughout. There's no Ingress controller anywhere.
 ## Requirements
 
 - macOS on Apple Silicon, Homebrew, a **rootful** Podman machine with ≥ 10 GiB RAM.
+- **Podman Desktop is optional.** The lab only needs the `podman` CLI and a Podman machine (the Linux VM). `00-prereqs.sh` installs `podman` from Homebrew only if it isn't already on your `PATH`, so an existing Podman Desktop / podman.io install is left alone. Don't run both: two `podman` binaries (`/opt/homebrew/bin` and `/opt/podman/bin`) at different versions is a common source of "machine not found" and API-version errors. Check with `which -a podman`.
+- Create the machine once (or in Podman Desktop → Settings → Resources):
+  ```zsh
+  podman machine init --cpus 6 --memory 12288 --disk-size 80 --rootful
+  podman machine start
+  ```
+  For an existing machine: `podman machine stop && podman machine set --rootful --memory 12288 && podman machine start`.
 - `kubectl apply` appears in exactly one place, `scripts/30-src-legacy-app.sh`, and that's deliberate: it builds the "legacy" estate the demo migrates away from. Everything on crane-dst arrives through a Helm bootstrap (Gitea, Argo CD) or Git (Contour, routes, the app).
 - If another kind lab is running, pause it to free RAM, e.g. `podman stop konveyor-lab-control-plane`.
 
