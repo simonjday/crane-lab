@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# vendor/ is populated by scripts/20-dst-platform.sh (Contour static Gateway render).
+# If the render doesn't bundle the Gateway API CRDs, the script prepends vendor/gateway-api-crds.yaml.
+# The render ships GatewayClass 'example' + Gateway projectcontour/contour.
+resources:
+  - vendor/contour-gateway.yaml
+patches:
+  # Envoy as NodePort on fixed ports; kind maps 30090 to the Mac's DST_HTTP_PORT (9090).
+  # 20-dst-platform.sh asserts ports[0]=80 and ports[1]=443 in the render.
+  - target:
+      version: v1
+      kind: Service
+      name: envoy
+      namespace: projectcontour
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/externalTrafficPolicy
+        value: Cluster
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30090
+      - op: add
+        path: /spec/ports/1/nodePort
+        value: 30453
+  # Let HTTPRoutes from any namespace attach to the shared Gateway
+  - target:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: contour
+      namespace: projectcontour
+    patch: |-
+      - op: add
+        path: /spec/listeners/0/allowedRoutes
+        value:
+          namespaces:
+            from: All

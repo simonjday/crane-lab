@@ -1,0 +1,2 @@
+# contour-gateway render (multi-doc) -> only the Service projectcontour/envoy
+select(.kind == "Service" and .metadata.name == "envoy" and .metadata.namespace == "projectcontour")

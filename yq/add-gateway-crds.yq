@@ -1,0 +1,2 @@
+# kustomization.yaml -> prepend vendor/gateway-api-crds.yaml to resources (once)
+.resources = (["vendor/gateway-api-crds.yaml"] + .resources | unique)

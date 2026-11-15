@@ -1,0 +1,47 @@
+# Gitea on crane-dst: single pod, SQLite. Admin creds and ROOT_URL injected by 20-dst-platform.sh.
+# Exposed via NodePort (git push from the Mac) and an HTTPRoute (UI) — no Ingress.
+replicaCount: 1
+strategy:
+  type: Recreate
+  rollingUpdate: null
+
+gitea:
+  admin:
+    email: gitea@lab.local
+    passwordMode: initialOnlyNoReset
+  config:
+    database: { DB_TYPE: sqlite3 }
+    session: { PROVIDER: memory }
+    cache: { ADAPTER: memory }
+    queue: { TYPE: level }
+    indexer:
+      ISSUE_INDEXER_TYPE: bleve
+      REPO_INDEXER_ENABLED: false
+    service: { DISABLE_REGISTRATION: true }
+    repository: { DEFAULT_BRANCH: main }
+
+persistence:
+  enabled: true
+  size: 2Gi
+
+postgresql: { enabled: false }
+postgresql-ha: { enabled: false }
+valkey: { enabled: false }
+valkey-cluster: { enabled: false }
+
+service:
+  http:
+    type: NodePort
+    clusterIP: ""
+    port: 3000
+    nodePort: 30300                 # mapped to host GITEA_PORT (default 3001)
+  ssh:
+    type: ClusterIP
+    port: 22
+
+ingress:
+  enabled: false                    # UI is published by gitops/platform/routes/gitea.yaml (HTTPRoute)
+
+resources:
+  requests: { cpu: 50m, memory: 192Mi }
+  limits: { memory: 768Mi }

@@ -1,0 +1,2 @@
+# workload manifest -> replica count recorded by crane's downscale-workloads ("" if none)
+.metadata.annotations["crane.konveyor.io/original-replicas"] // ""

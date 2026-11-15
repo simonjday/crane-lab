@@ -1,0 +1,23 @@
+# Platform: HTTPRoutes for the Argo CD and Gitea UIs on the shared Gateway.
+# Retries until the Gateway API CRDs from contour-gateway exist.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-routes
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea_admin/crane-lab.git
+    targetRevision: main
+    path: gitops/platform/routes
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    retry: { limit: 20, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

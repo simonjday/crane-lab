@@ -1,0 +1,5 @@
+# Remove metadata owned by controllers on the SOURCE cluster before committing to Git.
+# deployment.kubernetes.io/revision is rewritten by the Deployment controller on every cluster;
+# if Git carries the source's value ("2"), Argo CD and the controller fight forever (OutOfSync loop).
+del(.metadata.annotations["deployment.kubernetes.io/revision"]) |
+del(.metadata.annotations | select(length == 0))

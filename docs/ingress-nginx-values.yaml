@@ -1,0 +1,44 @@
+# ARCHIVED — not used by the lab. Direct-mode transfer design; see docs/ingress-nginx-direct-mode.md
+# ingress-nginx on kind (crane-dst). Needed because `crane transfer-pvc` on plain Kubernetes
+# only supports the nginx-ingress endpoint, with SSL passthrough to the stunnel server.
+# NOTE: kubernetes/ingress-nginx was retired in March 2026 (no further releases or patches).
+# Fine for a lab; don't adopt it for new production clusters.
+controller:
+  kind: Deployment
+  replicaCount: 1
+  hostPort:
+    enabled: true                   # node:80/443 — same pattern as kind's own ingress guide
+    ports:
+      http: 80
+      https: 443
+  service:
+    type: ClusterIP
+  nodeSelector:
+    ingress-ready: "true"
+    kubernetes.io/os: linux
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1             # hostPort: old pod must go before the new one can bind
+  publishService:
+    enabled: false                  # no LoadBalancer Service; must be off to use publish-status-address
+  extraArgs:
+    enable-ssl-passthrough: "true"  # REQUIRED by crane transfer-pvc (rsync over stunnel)
+    publish-status-address: localhost
+  ingressClassResource:
+    name: nginx
+    default: true
+  watchIngressWithoutClass: true
+  config:
+    # nginx defaults to one worker per CPU, each with a thread pool. Every config reload (crane
+    # adds an Ingress) briefly doubles that. On a busy kind node that exhausts the container's
+    # PID/thread limit: "pthread_create() failed (11)" and the controller wedges. Keep it small.
+    worker-processes: "2"
+  admissionWebhooks:
+    enabled: false                  # lab: avoids webhook-not-ready races during bootstrap
+  resources:
+    requests: { cpu: 50m, memory: 90Mi }

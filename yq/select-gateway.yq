@@ -1,0 +1,2 @@
+# contour-gateway render -> the Gateway projectcontour/contour (no output if absent)
+select(.kind == "Gateway" and .metadata.name == "contour" and .metadata.namespace == "projectcontour")

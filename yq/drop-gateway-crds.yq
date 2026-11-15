@@ -1,0 +1,2 @@
+# kustomization.yaml -> drop vendor/gateway-api-crds.yaml from resources
+.resources = (.resources | map(select(. != "vendor/gateway-api-crds.yaml")))

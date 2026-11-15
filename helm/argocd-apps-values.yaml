@@ -1,0 +1,23 @@
+# Root app-of-apps on crane-dst. Platform apps (Contour Gateway, HTTPRoutes) live in
+# gitops/apps/dst from the start; demo/04-publish.sh adds the migrated shop.
+# repoURL injected by 20-dst-platform.sh.
+applications:
+  root:
+    namespace: argocd
+    project: default
+    finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    source:
+      repoURL: REPLACED_BY_SCRIPT
+      targetRevision: main
+      path: gitops/apps/dst
+      directory:
+        recurse: false
+        include: "*.yaml"
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: argocd
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true

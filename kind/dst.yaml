@@ -1,0 +1,22 @@
+# crane-dst — the target cluster: GitOps (Argo CD + Gitea) behind Gateway API (Contour).
+# Rendered with envsubst by scripts/10-clusters.sh
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: ${DST_CLUSTER}
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30090            # Envoy (Contour Gateway) HTTP NodePort -> Argo CD / Gitea UIs
+        hostPort: ${DST_HTTP_PORT}
+        listenAddress: "${LISTEN_ADDRESS}"
+        protocol: TCP
+      - containerPort: 30080            # shop (podinfo) NodePort after migration
+        hostPort: ${DST_APP_PORT}
+        listenAddress: "${LISTEN_ADDRESS}"
+        protocol: TCP
+      - containerPort: 30300            # Gitea HTTP NodePort for git push from the Mac
+        hostPort: ${GITEA_PORT}
+        listenAddress: "${LISTEN_ADDRESS}"
+        protocol: TCP
+# No inbound path from crane-src is needed: PVC data goes crane-src -> object store -> crane-dst
+# (crane transfer-pvc indirect mode). Both clusters only make outbound calls to the store.

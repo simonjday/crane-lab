@@ -1,0 +1,4 @@
+# exported podinfo Deployment -> the live hot-fixes crane captured
+{"replicas": .spec.replicas,
+ "ui_message": (.spec.template.spec.containers[0].env[] | select(.name == "PODINFO_UI_MESSAGE") | .value),
+ "ops_annotation": .metadata.annotations["ops.example.com/last-change"]}

@@ -1,0 +1,2 @@
+# contour-gateway render -> the Gateway API gateways CRD (no output if not bundled)
+select(.kind == "CustomResourceDefinition" and .metadata.name == "gateways.gateway.networking.k8s.io")

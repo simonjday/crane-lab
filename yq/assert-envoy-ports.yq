@@ -1,0 +1,2 @@
+# Service projectcontour/envoy (single document) -> true if its ports are [80, 443] in that order
+(.spec.ports[0].port == 80) and (.spec.ports[1].port == 443)

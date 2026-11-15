@@ -1,0 +1,6 @@
+# exported Deployment -> server-managed fields that must not travel
+{"uid": .metadata.uid,
+ "resourceVersion": .metadata.resourceVersion,
+ "creationTimestamp": .metadata.creationTimestamp,
+ "managedFields_entries": (.metadata.managedFields | length),
+ "status_keys": (.status | keys)}

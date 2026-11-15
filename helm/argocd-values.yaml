@@ -1,0 +1,52 @@
+# Argo CD on crane-dst. Lab sizing; production concerns flagged inline.
+# The UI is published by gitops/platform/routes/argocd.yaml (HTTPRoute) — no Ingress.
+global:
+  domain: argocd.127.0.0.1.nip.io
+
+configs:
+  params:
+    server.insecure: true            # plain HTTP behind Envoy (lab)
+  cm:
+    timeout.reconciliation: 30s      # faster pickup of demo commits
+    # Contour in static-provisioning mode (gatewayRef) reconciles only its one Gateway and never
+    # writes GatewayClass status, so Accepted stays Unknown. Argo CD's built-in GatewayClass check
+    # maps that to Progressing forever. Healthy unless a controller explicitly rejects the class.
+    resource.customizations.health.gateway.networking.k8s.io_GatewayClass: |
+      hs = {}
+      hs.status = "Healthy"
+      hs.message = "no controller rejection (Contour gatewayRef mode leaves Accepted=Unknown)"
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "Accepted" and c.status == "False" then
+            hs.status = "Degraded"
+            hs.message = c.message or "GatewayClass rejected"
+          end
+        end
+      end
+      return hs
+
+dex:
+  enabled: false                     # prod: SSO
+notifications:
+  enabled: false
+
+server:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+
+controller:
+  resources:
+    requests: { cpu: 200m, memory: 384Mi }
+    limits: { memory: 1Gi }
+
+repoServer:
+  resources:
+    requests: { cpu: 50m, memory: 192Mi }
+    limits: { memory: 768Mi }
+
+redis:
+  resources:
+    requests: { cpu: 25m, memory: 48Mi }
+
+applicationSet:
+  replicas: 1

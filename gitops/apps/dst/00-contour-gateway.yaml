@@ -1,0 +1,23 @@
+# Platform: Contour with a static Gateway (Gateway API). Envoy is a NodePort (30090) that kind
+# maps to the Mac's DST_HTTP_PORT. Vendored by scripts/20-dst-platform.sh.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: contour-gateway
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: http://gitea-http.gitea.svc.cluster.local:3000/gitea_admin/crane-lab.git
+    targetRevision: main
+    path: gitops/platform/contour
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    retry: { limit: 10, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

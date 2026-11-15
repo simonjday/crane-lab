@@ -1,0 +1,2 @@
+# custom stage kustomization.yaml -> register patches/podinfo-destination.patch.yaml once
+.patches = ((.patches // []) + [{"path": "patches/podinfo-destination.patch.yaml"}] | unique_by(.path))

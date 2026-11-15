@@ -1,0 +1,6 @@
+# rendered podinfo Deployment -> drift kept, noise gone, destination message applied
+{"replicas": .spec.replicas,
+ "ui_message": (.spec.template.spec.containers[0].env[] | select(.name == "PODINFO_UI_MESSAGE") | .value),
+ "has_uid": (.metadata.uid != null),
+ "has_status": (.status != null),
+ "ops_annotation": .metadata.annotations["ops.example.com/last-change"]}

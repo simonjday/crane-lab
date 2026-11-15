@@ -1,0 +1,2 @@
+# KubernetesPlugin patch for redis -> only the downscale-related JSON patch ops
+.[] | select(.path == "/spec/replicas" or (.path | test("original-replicas")) or .path == "/metadata/annotations")
