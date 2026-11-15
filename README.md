@@ -4,17 +4,7 @@ A self-contained lab for an M3 Mac (Podman + kind). It moves a running app **and
 from one Kubernetes cluster to another, onboards it to GitOps on the way, and uses **Gateway API**
 throughout. There's no Ingress controller anywhere.
 
-```text
-                      Podman network "kind"
- ┌─ crane-src (legacy) ───────┐      ┌─ crane-objstore ─┐      ┌─ crane-dst (target) ─────────────────────┐
- │ ns shop                    │      │ S3 endpoint      │      │ Contour + Envoy  (Gateway API)            │
- │  podinfo ×2 (hot-fixed)    │ ───▶ │ rclone serve s3  │ ───▶ │ Gitea  ◀── git push ── your Mac           │
- │  redis ── PVC redis-data   │upload│ bucket           │ down │ Argo CD ── syncs gitops/ ──▶ ns shop      │
- │  NodePort 30080 → :9080    │      │ crane-transfer   │ load │      podinfo, redis, PVC redis-data       │
- └────────────────────────────┘      └──────────────────┘      │ HTTPRoutes → :9090 ; NodePort 30080 → :9081│
-          ▲                                                    └───────────────────────────────────────────┘
-          └── crane export ──▶ Mac: transform → apply → validate ──▶ git commit ──▶ Gitea ──▶ Argo CD
-```
+![crane-lab architecture: crane-src, S3-compatible object store, crane-dst with Gitea, Argo CD and Gateway API](docs/crane-lab-architecture.svg)
 
 | | |
 |---|---|
