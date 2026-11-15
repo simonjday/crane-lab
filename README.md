@@ -98,6 +98,45 @@ The lab uses indirect mode, so it needs no Ingress controller. It's also the pat
 
 The full direct-mode design, every problem we hit with ingress-nginx, and how to switch back are in **[docs/ingress-nginx-direct-mode.md](docs/ingress-nginx-direct-mode.md)**.
 
+### The "S3 bucket" isn't AWS S3
+
+`crane-objstore` is a stand-in. It's a single container running [`rclone serve s3`](https://rclone.org/commands/rclone_serve_s3/), which speaks the S3 API over HTTP and stores objects as plain files in a Podman volume:
+
+| | Real S3 (AWS, MinIO, Ceph RGW, ODF/NooBaa) | This lab |
+|---|---|---|
+| Endpoint | `https://s3.<region>.amazonaws.com` or your object store's URL | `http://<container-ip>:9000` on the Podman `kind` network, not published to the Mac |
+| Bucket | A real bucket with policies, versioning, lifecycle | A directory, `/data/crane-transfer`, in the `crane-objstore-data` volume |
+| Auth | IAM keys / roles, STS | Static keys from `config.env` (`crane` / `crane-lab-secret`) |
+| Transport | TLS | Plain HTTP (lab only) |
+| Durability | Replicated, 11 nines | One container on your laptop |
+
+**Why it still proves the point:** Crane doesn't talk to S3 itself. `transfer-pvc --cloud-storage` hands an rclone config to an upload pod and a download pod, and **rclone** talks to whatever the config points at. The only thing that changes between this lab and a real bucket is `.secrets/rclone.conf`:
+
+```ini
+# lab (written by scripts/15-object-store.sh)
+[objstore]
+type = s3
+provider = Other
+endpoint = http://10.89.0.11:9000
+force_path_style = true
+access_key_id = crane
+secret_access_key = crane-lab-secret
+
+# AWS — same remote name, so no script changes
+[objstore]
+type = s3
+provider = AWS
+region = eu-west-2
+access_key_id = …
+secret_access_key = …
+```
+
+Azure Blob and GCS work the same way (`type = azureblob` / `type = google cloud storage`), because rclone supports them all.
+
+**Why not MinIO?** MinIO would work too. But `rclone serve s3` is one small multi-arch binary, uses the same tool as Crane's transfer pods, and needs no console or bucket-creation step. A bucket is just `mkdir`.
+
+**Lab-only shortcuts to drop for real use:** plain HTTP, static keys in a config file, no encryption at rest, and objects kept after the transfer (`--keep-cloud-data`, so you can show them). For production, use TLS, scoped credentials, Crane's `--encrypt` for client-side encryption, and a lifecycle rule or cleanup on the bucket.
+
 ### Why crane-src has no Argo CD or Gitea
 
 That's deliberate. crane-src represents the estate Crane exists for: workloads deployed by hand (or by a pipeline nobody trusts), patched live, with no reliable manifests. Crane's first three steps (export, transform, render) **reconstruct** redeployable manifests from what is actually running, drift included. If crane-src were already under GitOps, Git would already be the source of truth, and the migration would mostly be re-pointing Argo CD. The interesting part of the demo would disappear.
