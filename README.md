@@ -155,4 +155,4 @@ crane-lab/
 MIT, see [LICENSE](LICENSE). Built on [Konveyor Crane](https://github.com/konveyor/crane),
 [podinfo](https://github.com/stefanprodan/podinfo), [Contour](https://projectcontour.io),
 [Argo CD](https://argo-cd.readthedocs.io), [Gitea](https://gitea.com) and [rclone](https://rclone.org).
-Not affiliated with or endorsed by Red Hat. Write-up: [Medium @simonjday](https://medium.com/@simonjday).
+Not affiliated with or endorsed by Red Hat. Write-up: [Migrating a stateful app between Kubernetes clusters — and onboarding it to GitOps on the way](https://medium.com/@simonjday/migrating-a-stateful-app-between-kubernetes-clusters-and-onboarding-it-to-gitops-on-the-way-deaaf573b36c) (Medium).
