@@ -17,15 +17,38 @@ throughout. There's no Ingress controller anywhere.
 ## Requirements
 
 - macOS on Apple Silicon, Homebrew, a **rootful** Podman machine with ≥ 10 GiB RAM.
-- **Podman Desktop is optional.** The lab only needs the `podman` CLI and a Podman machine (the Linux VM). `00-prereqs.sh` installs `podman` from Homebrew only if it isn't already on your `PATH`, so an existing Podman Desktop / podman.io install is left alone. Don't run both: two `podman` binaries (`/opt/homebrew/bin` and `/opt/podman/bin`) at different versions is a common source of "machine not found" and API-version errors. Check with `which -a podman`.
-- Create the machine once (or in Podman Desktop → Settings → Resources):
-  ```zsh
-  podman machine init --cpus 6 --memory 12288 --disk-size 80 --rootful
-  podman machine start
-  ```
-  For an existing machine: `podman machine stop && podman machine set --rootful --memory 12288 && podman machine start`.
+- **Podman Desktop is optional.** The lab only needs the `podman` CLI and a Podman machine (the Linux VM). `00-prereqs.sh` installs `podman` from Homebrew only if it isn't already on your `PATH`, so an existing install is left alone. Have **one** `podman` only; check with `which -a podman`:
+  - **Podman Desktop or the Red Hat build of Podman Desktop:** the `.dmg` bundles its own Podman in `/opt/podman/bin`. Red Hat's docs say to `brew uninstall podman` first.
+  - **Homebrew only:** fine. If Podman Desktop onboarding offers to install Podman, decline.
+  - Two versions side by side commonly cause "machine not found" and API-version errors.
+
 - `kubectl apply` appears in exactly one place, `scripts/30-src-legacy-app.sh`, and that's deliberate: it builds the "legacy" estate the demo migrates away from. Everything on crane-dst arrives through a Helm bootstrap (Gitea, Argo CD) or Git (Contour, routes, the app).
 - If another kind lab is running, pause it to free RAM, e.g. `podman stop konveyor-lab-control-plane`.
+
+### Podman machine sizing
+
+| | Minimum | Suggested | Notes |
+|---|---|---|---|
+| CPUs | 4 | 6 | Two kind control planes + Argo CD + Gitea |
+| Memory | 10 GiB | 12 GiB | `00-prereqs.sh` warns below 10 GiB |
+| Disk | 30 GiB | **40 GiB** | Thin-provisioned: this is a ceiling, not an allocation. The lab actually uses about **8–10 GB** (2 kind node images, Argo CD, Gitea, Contour/Envoy, podinfo, Redis, the arm64 `rsync-transfer` build, the object-store volume). |
+| Mode | rootful | rootful | Required by kind on Podman |
+
+Create it once, from the CLI or in Podman Desktop → Settings → Resources:
+
+```zsh
+podman machine init --cpus 6 --memory 12288 --disk-size 40 --rootful
+podman machine start
+```
+
+For an existing machine: `podman machine stop && podman machine set --rootful --cpus 6 --memory 12288 && podman machine start`. Disk size can only grow; to shrink it, recreate the machine.
+
+**Reclaiming space:**
+- `scripts/90-teardown.sh` removes the clusters and object store but keeps the machine and the built image (`PURGE_IMAGE=1` drops the image too).
+- `podman system prune -a` clears unused images.
+- `podman machine rm` deletes the VM and everything in it. After that, rerun `scripts/up.sh` from scratch: about 10–15 min, including the arm64 image build.
+
+### Host ports
 
 Host ports (all on `127.0.0.1`; macOS + Podman can't bind < 1024 to a specific address):
 

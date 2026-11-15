@@ -36,7 +36,7 @@ grep -q '.local/bin' "${HOME}/.zshrc" 2>/dev/null || warn "add to ~/.zshrc: expo
 # ---- Podman machine ----------------------------------------------------------
 podman machine inspect "$PODMAN_MACHINE" >/dev/null 2>&1 \
   || die "Podman machine '${PODMAN_MACHINE}' not found. Create one (or use Podman Desktop → Settings → Resources):
-      podman machine init --cpus 6 --memory 12288 --disk-size 80 --rootful ${PODMAN_MACHINE}
+      podman machine init --cpus 6 --memory 12288 --disk-size 40 --rootful ${PODMAN_MACHINE}
       podman machine start ${PODMAN_MACHINE}"
 info=$(podman machine inspect "$PODMAN_MACHINE")
 log "Podman machine: $(jq -r -f "${JQ_DIR}/machine-summary.jq" <<<"$info")"
